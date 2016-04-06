@@ -42,7 +42,7 @@ defmodule Timex.Ecto.Time do
   end
   def cast(input) do
     case Ecto.Time.cast(input) do
-      {:ok, time} -> load({time.hour, time.minute, time.second, time.usecs})
+      {:ok, time} -> load({time.hour, time.min, time.sec, time.usec})
       :error -> :error
     end
   end
@@ -52,8 +52,10 @@ defmodule Timex.Ecto.Time do
   """
   def load({hour, minute, second, usecs}) do
     millis = Time.from(usecs, :microseconds) |> Time.to_milliseconds
-    time = %{DateTime.epoch | :hour => hour, :minute => minute, :second => second, :millisecond => millis} |> DateTime.to_timestamp(:epoch)
-    {:ok, time}
+    {megasecs, secs, microsecs} =
+      %{DateTime.epoch | hour: hour, minute: minute, second: second, millisecond: millis}
+      |> DateTime.to_timestamp(:epoch)
+    {:ok, {megasecs, secs, round(microsecs)}}
   end
   def load(_), do: :error
 
@@ -66,4 +68,3 @@ defmodule Timex.Ecto.Time do
   end
   def dump(_), do: :error
 end
-
